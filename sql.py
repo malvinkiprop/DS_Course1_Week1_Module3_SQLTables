@@ -51,7 +51,7 @@
     },
     {
       "cell_type": "code",
-      "execution_count": 1,
+      "execution_count": 16,
       "metadata": {
         "colab": {
           "base_uri": "https://localhost:8080/",
@@ -180,7 +180,7 @@
               "7  CREATE TABLE `employees` (`employeeNumber`, `l...  "
             ]
           },
-          "execution_count": 1,
+          "execution_count": 16,
           "metadata": {},
           "output_type": "execute_result"
         }
@@ -308,13 +308,19 @@
     },
     {
       "cell_type": "code",
-      "execution_count": null,
+      "execution_count": 17,
       "metadata": {},
       "outputs": [],
       "source": [
         "# CodeGrade step4\n",
         "# Replace None with your code\n",
-        "df_contacts = None"
+        "df_contacts = pd.read_sql(\"\"\"\n",
+        "SELECT c.contactFirstName, c.contactLastName, c.phone, c.salesRepEmployeeNumber\n",
+        "FROM customers c\n",
+        "LEFT JOIN orders o ON c.customerNumber = o.customerNumber\n",
+        "WHERE o.orderNumber IS NULL\n",
+        "ORDER BY c.contactLastName\n",
+        "\"\"\", conn)"
       ]
     },
     {
