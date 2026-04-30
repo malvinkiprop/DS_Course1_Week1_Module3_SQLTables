@@ -42,6 +42,12 @@ conn = sqlite3.connect('data.sqlite')
 
 pd.read_sql("""SELECT * FROM sqlite_master""", conn)
 
+# %%
+pd.read_sql("""SELECT * FROM employees""", conn)
+
+# %%
+pd.read_sql("""SELECT * FROM offices""", conn)
+
 # %% [markdown]
 # ## Part 1: Join and Filter
 
@@ -53,16 +59,14 @@ pd.read_sql("""SELECT * FROM sqlite_master""", conn)
 # %%
 # CodeGrade step1
 # Replace None with your code
-df_boston = pd.read_sql("""
-SELECT e.firstName, e.lastName, e.jobTitle
-FROM employees e
-JOIN offices o ON e.officeCode = o.officeCode
-WHERE o.city = 'Boston'
-""", conn)
+df_boston = pd.read_sql("""SELECT employees.firstName, employees.lastName
+                        FROM employees
+                        JOIN offices 
+                            ON employees.officeCode = offices.officeCode
+                        WHERE offices.city = 'Boston'
+                        """, conn)
 
-print("Step 1: Boston Employees")
-print(df_boston)
-print()
+df_boston.head()
 
 # %% [markdown]
 # ### Step 2
@@ -73,15 +77,14 @@ print()
 # CodeGrade step2
 # Replace None with your code
 df_zero_emp = pd.read_sql("""
-SELECT o.officeCode, o.city, o.country
-FROM offices o
-LEFT JOIN employees e ON o.officeCode = e.officeCode
-WHERE e.employeeNumber IS NULL
-""", conn)
+    SELECT offices.officeCode, offices.city, offices.state
+    FROM offices
+    LEFT JOIN employees 
+        ON offices.officeCode = employees.officeCode
+    WHERE employees.employeeNumber IS NULL
+    """, conn)
 
-print("Step 2: Offices with Zero Employees")
-print(df_zero_emp)
-print()
+df_zero_emp.head()
 
 # %% [markdown]
 # ## Part 2: Type of Join
@@ -95,15 +98,14 @@ print()
 # CodeGrade step3
 # Replace None with your code
 df_employee = pd.read_sql("""
-SELECT e.firstName, e.lastName, o.city, o.state
-FROM employees e
-LEFT JOIN offices o ON e.officeCode = o.officeCode
-ORDER BY e.firstName, e.lastName
-""", conn)
+    SELECT employees.firstName, employees.lastName, offices.city, offices.state
+    FROM employees
+    LEFT JOIN offices 
+        ON employees.officeCode = offices.officeCode
+    ORDER BY employees.firstName, employees.lastName
+    """, conn)
 
-print("Step 3: All Employees with Office Info")
-print(df_employee)
-print()
+df_employee.head()
 
 # %% [markdown]
 # ### Step 4
@@ -115,16 +117,15 @@ print()
 # CodeGrade step4
 # Replace None with your code
 df_contacts = pd.read_sql("""
-SELECT c.contactFirstName, c.contactLastName, c.phone, c.salesRepEmployeeNumber
-FROM customers c
-LEFT JOIN orders o ON c.customerNumber = o.customerNumber
-WHERE o.orderNumber IS NULL
-ORDER BY c.contactLastName
-""", conn)
+    SELECT customers.contactFirstName, customers.contactLastName, customers.phone, customers.salesRepEmployeeNumber
+    FROM customers
+    LEFT JOIN orders 
+        ON customers.customerNumber = orders.customerNumber
+    WHERE orders.orderNumber IS NULL
+    ORDER BY customers.contactLastName
+    """, conn)
 
-print("Step 4: Customers with No Orders")
-print(df_contacts)
-print()init
+df_contacts.head()
 
 # %% [markdown]
 # ## Part 3: Built-in Function
@@ -140,15 +141,14 @@ print()init
 # CodeGrade step5
 # Replace None with your code
 df_payment = pd.read_sql("""
-SELECT c.contactFirstName, c.contactLastName, p.amount, p.paymentDate
-FROM customers c
-JOIN payments p ON c.customerNumber = p.customerNumber
-ORDER BY CAST(p.amount AS REAL) DESC
-""", conn)
+    SELECT customers.contactFirstName, customers.contactLastName, payments.amount, payments.paymentDate
+    FROM customers
+    JOIN payments 
+        ON customers.customerNumber = payments.customerNumber
+    ORDER BY CAST(payments.amount AS REAL) DESC
+    """, conn)
 
-print("Step 5: Customer Payments")
-print(df_payment)
-print()
+df_payment.head()
 
 # %% [markdown]
 # ## Part 4: Joining and Grouping
@@ -162,17 +162,16 @@ print()
 # CodeGrade step6
 # Replace None with your code
 df_credit = pd.read_sql("""
-SELECT e.employeeNumber, e.firstName, e.lastName, COUNT(c.customerNumber) as num_customers
-FROM employees e
-JOIN customers c ON e.employeeNumber = c.salesRepEmployeeNumber
-GROUP BY e.employeeNumber, e.firstName, e.lastName
-HAVING AVG(c.creditLimit) > 90000
-ORDER BY num_customers DESC
-""", conn)
+    SELECT employees.employeeNumber, employees.firstName, employees.lastName, COUNT(customers.customerNumber) AS num_customers
+    FROM employees
+    JOIN customers 
+        ON employees.employeeNumber = customers.salesRepEmployeeNumber
+    GROUP BY employees.employeeNumber, employees.firstName, employees.lastName
+    HAVING AVG(customers.creditLimit) > 90000
+    ORDER BY num_customers DESC
+    """, conn)
 
-print("Step 6: Top Employees by Customer Credit")
-print(df_credit)
-print()
+df_credit.head()
 
 # %% [markdown]
 # ### Step 7
@@ -183,16 +182,15 @@ print()
 # CodeGrade step7
 # Replace None with your code
 df_product_sold = pd.read_sql("""
-SELECT p.productName, COUNT(DISTINCT od.orderNumber) as numorders, SUM(od.quantityOrdered) as totalunits
-FROM products p
-JOIN orderdetails od ON p.productCode = od.productCode
-GROUP BY p.productCode, p.productName
-ORDER BY totalunits DESC
-""", conn)
+    SELECT products.productName, COUNT(*) AS numorders, SUM(orderdetails.quantityOrdered) AS totalunits
+    FROM products
+    JOIN orderdetails 
+        ON products.productCode = orderdetails.productCode
+    GROUP BY products.productName
+    ORDER BY totalunits DESC
+    """, conn)
 
-print("Step 7: Top Selling Products")
-print(df_product_sold)
-print()
+df_product_sold.head()
 
 # %% [markdown]
 # ## Part 5: Multiple Joins
@@ -208,18 +206,17 @@ print()
 # CodeGrade step8
 # Replace None with your code
 df_total_customers = pd.read_sql("""
-SELECT p.productName, p.productCode, COUNT(DISTINCT c.customerNumber) as numpurchasers
-FROM products p
-JOIN orderdetails od ON p.productCode = od.productCode
-JOIN orders o ON od.orderNumber = o.orderNumber
-JOIN customers c ON o.customerNumber = c.customerNumber
-GROUP BY p.productCode, p.productName
-ORDER BY numpurchasers DESC
-""", conn)
+    SELECT products.productName, products.productCode, COUNT(DISTINCT orders.customerNumber) AS numpurchasers
+    FROM products
+    JOIN orderdetails 
+        ON products.productCode = orderdetails.productCode
+    JOIN orders 
+        ON orderdetails.orderNumber = orders.orderNumber
+    GROUP BY products.productName, products.productCode
+    ORDER BY numpurchasers DESC
+    """, conn)
 
-print("Step 8: Products by Number of Purchasers")
-print(df_total_customers)
-print()
+df_total_customers.head()
 
 # %% [markdown]
 # ### Step 9
@@ -230,16 +227,16 @@ print()
 # CodeGrade step9
 # Replace None with your code
 df_customers = pd.read_sql("""
-SELECT o.officeCode, o.city, COUNT(DISTINCT c.customerNumber) as n_customers
-FROM offices o
-JOIN employees e ON o.officeCode = e.officeCode
-JOIN customers c ON e.employeeNumber = c.salesRepEmployeeNumber
-GROUP BY o.officeCode, o.city
-""", conn)
+    SELECT offices.officeCode, offices.city, COUNT(customers.customerNumber) AS n_customers
+    FROM offices
+    JOIN employees 
+        ON offices.officeCode = employees.officeCode
+    JOIN customers 
+        ON employees.employeeNumber = customers.salesRepEmployeeNumber
+    GROUP BY offices.officeCode, offices.city
+    """, conn)
 
-print("Step 9: Customers per Office")
-print(df_customers)
-print()
+df_customers.head()
 
 # %% [markdown]
 # ## Part 6: Subquery
@@ -255,25 +252,31 @@ print()
 # CodeGrade step10
 # Replace None with your code
 df_under_20 = pd.read_sql("""
-SELECT DISTINCT e.employeeNumber, e.firstName, e.lastName, o.city, o.officeCode
-FROM employees e
-JOIN offices o ON e.officeCode = o.officeCode
-JOIN customers c ON e.employeeNumber = c.salesRepEmployeeNumber
-JOIN orders ord ON c.customerNumber = ord.customerNumber
-JOIN orderdetails od ON ord.orderNumber = od.orderNumber
-WHERE od.productCode IN (
-    SELECT p.productCode
-    FROM products p
-    JOIN orderdetails od2 ON p.productCode = od2.productCode
-    JOIN orders o2 ON od2.orderNumber = o2.orderNumber
-    GROUP BY p.productCode
-    HAVING COUNT(DISTINCT o2.customerNumber) < 20
-)
-""", conn)
+    SELECT DISTINCT employees.employeeNumber, employees.firstName, employees.lastName, offices.city, offices.officeCode
+    FROM employees
+    JOIN offices 
+        ON employees.officeCode = offices.officeCode
+    JOIN customers 
+        ON employees.employeeNumber = customers.salesRepEmployeeNumber
+    JOIN orders 
+        ON customers.customerNumber = orders.customerNumber
+    JOIN orderdetails 
+        ON orders.orderNumber = orderdetails.orderNumber
+    WHERE orderdetails.productCode IN (
+        SELECT productCode
+        FROM (
+            SELECT orderdetails.productCode, COUNT(DISTINCT orders.customerNumber) AS customer_count
+            FROM orderdetails
+            JOIN orders 
+                ON orderdetails.orderNumber = orders.orderNumber
+            GROUP BY orderdetails.productCode
+        )
+        WHERE customer_count < 20
+    )
+    ORDER BY employees.lastName
+    """, conn)
 
-print("Step 10: Employees Selling Underperforming Products")
-print(df_under_20)
-print()
+df_under_20.head()
 
 # %% [markdown]
 # ### Close the connection
@@ -282,5 +285,3 @@ print()
 # Run this cell without changes
 
 conn.close()
-
-
